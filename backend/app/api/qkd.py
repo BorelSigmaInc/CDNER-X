@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import numpy as np
 import json
+from typing import Optional
 from ..core.database import get_db
 from ..models.database import QuantumResult
 
@@ -10,6 +11,7 @@ router = APIRouter(prefix="/api/qkd", tags=["qkd"])
 
 class QKDRequest(BaseModel):
     num_bits: int
+    user_id: Optional[int] = 1
 
 @router.post("/generate")
 async def generate_qkd(request: QKDRequest, db: Session = Depends(get_db)):
@@ -30,9 +32,9 @@ async def generate_qkd(request: QKDRequest, db: Session = Depends(get_db)):
             sifted.append(int(a_bit))
     key = ''.join(map(str, sifted))
 
-    # Save to database
+    # Save to database using provided user_id
     result_record = QuantumResult(
-        user_id=1,  # Placeholder
+        user_id=request.user_id,
         algorithm="bb84",
         result_data=json.dumps({
             "sifted_key_length": len(sifted),

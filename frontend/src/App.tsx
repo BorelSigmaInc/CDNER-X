@@ -29,6 +29,12 @@ interface QuantumHistoryItem {
   created_at: string
 }
 
+interface AuthResponse {
+  status: string
+  user_id: number
+  email: string
+}
+
 function App() {
   const [bonding, setBonding] = useState<BondingStatus | null>(null)
   const [error, setError] = useState('')
@@ -38,6 +44,12 @@ function App() {
   const [loadingQkd, setLoadingQkd] = useState(false)
   const [quantumHistory, setQuantumHistory] = useState<QuantumHistoryItem[]>([])
 
+  // Auth state
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [userId, setUserId] = useState<number | null>(null)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+
   useEffect(() => {
     fetch('http://127.0.0.1:8000/api/bonding/status')
       .then((res) => res.json())
@@ -45,12 +57,32 @@ function App() {
       .catch((err) => setError(err.message))
   }, [])
 
+  const handleAuth = () => {
+    const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register'
+    fetch(`http://127.0.0.1:8000${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((data) => { throw new Error(data.detail || 'Authentication failed') })
+        }
+        return res.json()
+      })
+      .then((data: AuthResponse) => {
+        setUserId(data.user_id)
+        setError('')
+      })
+      .catch((err) => setError(err.message))
+  }
+
   const runQuantumOptimization = () => {
     setLoadingQuantum(true)
     fetch('http://127.0.0.1:8000/api/quantum/optimize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths: ['Starlink', '5G', 'Fiber'] })
+      body: JSON.stringify({ paths: ['Starlink', '5G', 'Fiber'], user_id: userId ?? 1 })
     })
       .then((res) => res.json())
       .then((data) => setQuantum(data))
@@ -63,7 +95,7 @@ function App() {
     fetch('http://127.0.0.1:8000/api/qkd/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ num_bits: 10 })
+      body: JSON.stringify({ num_bits: 10, user_id: userId ?? 1 })
     })
       .then((res) => res.json())
       .then((data) => setQkd(data))
@@ -78,10 +110,51 @@ function App() {
       .catch((err) => setError(err.message))
   }
 
+  const startBondingSession = () => {
+    if (!userId) {
+      setError('Please log in first')
+      return
+    }
+    fetch(`http://127.0.0.1:8000/api/bonding/start?user_id=${userId}`, {
+      method: 'POST'
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setError('')
+        alert(`Bonding session started with ID ${data.session_id}`)
+      })
+      .catch((err) => setError(err.message))
+  }
+
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
       <h1>Yosemite Quantum Bonding Engine</h1>
       {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+
+      {/* Auth section */}
+      <div style={{ marginBottom: '2rem', border: '1px solid #ccc', padding: '1rem' }}>
+        <h2>{authMode === 'login' ? 'Login' : 'Register'}</h2>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{ marginRight: '0.5rem' }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ marginRight: '0.5rem' }}
+        />
+        <button onClick={handleAuth}>{authMode === 'login' ? 'Login' : 'Register'}</button>
+        <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} style={{ marginLeft: '0.5rem' }}>
+          Switch to {authMode === 'login' ? 'Register' : 'Login'}
+        </button>
+        {userId && <p>Logged in as user ID: {userId}</p>}
+      </div>
+
       {!bonding && !error && <p>Loading bonding status...</p>}
       {bonding && (
         <div>
@@ -91,6 +164,7 @@ function App() {
           <p><strong>Latency:</strong> {bonding.latency}</p>
           <p><strong>Active Sessions:</strong> {bonding.active_sessions}</p>
           <p><strong>Interfaces:</strong> {bonding.interfaces.join(', ')}</p>
+          <button onClick={startBondingSession}>Start Bonding Session</button>
         </div>
       )}
 

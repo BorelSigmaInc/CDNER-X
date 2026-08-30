@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api/quantum", tags=["quantum"])
 
 class OptimizeRequest(BaseModel):
     paths: List[str]
+    user_id: Optional[int] = 1  # default to 1 for backward compatibility
 
 @router.post("/optimize")
 async def optimize_quantum_path(request: OptimizeRequest, db: Session = Depends(get_db)):
@@ -32,9 +33,9 @@ async def optimize_quantum_path(request: OptimizeRequest, db: Session = Depends(
     # Selection logic
     selected = paths[0] if counts.get("00", 0) > counts.get("11", 0) else paths[-1]
 
-    # Save to database
+    # Save to database using provided user_id
     result_record = QuantumResult(
-        user_id=1,  # Placeholder user_id
+        user_id=request.user_id,
         algorithm="bell_state_path_optimization",
         result_data=json.dumps({"selected_path": selected, "counts": counts}),
         execution_time=0.0
