@@ -1,13 +1,12 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     APP_NAME: str = "Yosemite Quantum Bonding"
-    DATABASE_URL: str = "postgresql://yosemite:yosemite@localhost:5432/yosemite"
+    DATABASE_URL: str = "postgresql://yosemite:yosemite@localhost:5433/yosemite"
     REDIS_URL: str = "redis://localhost:6379/0"
     QISKIT_BACKEND: str = "ibmq_qasm_simulator"
     QKD_PROTOCOL: str = "BB84"
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()

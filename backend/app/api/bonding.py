@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from ..core.database import get_db
+from ..models.database import BondingSession
 
 router = APIRouter(prefix="/api/bonding", tags=["bonding"])
 
 @router.get("/status")
 async def get_bonding_status():
-    """Return current bonding status across interfaces."""
     return {
         "status": "active",
         "throughput": "250 Mbps",
@@ -14,13 +16,16 @@ async def get_bonding_status():
     }
 
 @router.post("/start")
-async def start_bonding(user_id: int):
-    """Start a new bonding session for a user."""
+async def start_bonding(user_id: int, db: Session = Depends(get_db)):
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user_id")
+    session = BondingSession(user_id=user_id, status="active")
+    db.add(session)
+    db.commit()
+    db.refresh(session)
     return {
         "status": "success",
         "user_id": user_id,
-        "session_id": 12345,
+        "session_id": session.id,
         "message": "Bonding session started"
     }

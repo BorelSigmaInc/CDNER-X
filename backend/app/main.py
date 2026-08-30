@@ -7,6 +7,11 @@ app = FastAPI(
     description="Quantum-Safe Multi-Path Connectivity Platform"
 )
 
+from .core.database import engine
+from .models.database import Base
+
+Base.metadata.create_all(bind=engine)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
