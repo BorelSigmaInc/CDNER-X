@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from typing import List
 from sqlalchemy.orm import Session
@@ -49,3 +49,19 @@ async def optimize_quantum_path(request: OptimizeRequest, db: Session = Depends(
         "counts": counts,
         "quantum_result_id": result_record.id
     }
+
+@router.get("/results")
+async def get_quantum_results(limit: int = Query(5, ge=1, le=50), db: Session = Depends(get_db)):
+    """Return the most recent quantum results."""
+    results = db.query(QuantumResult).order_by(QuantumResult.id.desc()).limit(limit).all()
+    return [
+        {
+            "id": r.id,
+            "user_id": r.user_id,
+            "algorithm": r.algorithm,
+            "result_data": r.result_data,
+            "execution_time": r.execution_time,
+            "created_at": r.created_at.isoformat()
+        }
+        for r in results
+    ]

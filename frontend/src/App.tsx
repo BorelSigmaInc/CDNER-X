@@ -20,6 +20,15 @@ interface QKDResult {
   key: string
 }
 
+interface QuantumHistoryItem {
+  id: number
+  user_id: number
+  algorithm: string
+  result_data: string
+  execution_time: number
+  created_at: string
+}
+
 function App() {
   const [bonding, setBonding] = useState<BondingStatus | null>(null)
   const [error, setError] = useState('')
@@ -27,6 +36,7 @@ function App() {
   const [qkd, setQkd] = useState<QKDResult | null>(null)
   const [loadingQuantum, setLoadingQuantum] = useState(false)
   const [loadingQkd, setLoadingQkd] = useState(false)
+  const [quantumHistory, setQuantumHistory] = useState<QuantumHistoryItem[]>([])
 
   useEffect(() => {
     fetch('http://127.0.0.1:8000/api/bonding/status')
@@ -59,6 +69,13 @@ function App() {
       .then((data) => setQkd(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoadingQkd(false))
+  }
+
+  const fetchQuantumHistory = () => {
+    fetch('http://127.0.0.1:8000/api/quantum/results?limit=5')
+      .then((res) => res.json())
+      .then((data) => setQuantumHistory(data))
+      .catch((err) => setError(err.message))
   }
 
   return (
@@ -102,6 +119,20 @@ function App() {
             <p><strong>Sifted Key Length:</strong> {qkd.sifted_key_length}</p>
             <p><strong>Key:</strong> {qkd.key}</p>
           </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: '2rem' }}>
+        <h2>Recent Quantum Results</h2>
+        <button onClick={fetchQuantumHistory}>Refresh Results</button>
+        {quantumHistory.length > 0 && (
+          <ul>
+            {quantumHistory.map((result) => (
+              <li key={result.id}>
+                <strong>{result.algorithm}</strong> - {result.result_data} (created at {result.created_at})
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
