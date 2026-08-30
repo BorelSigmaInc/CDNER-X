@@ -1,219 +1,72 @@
-import { useEffect, useState } from 'react'
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
+from typing import List, Optional
+from sqlalchemy.orm import Session
+from qiskit import QuantumCircuit
+from qiskit_aer import AerSimulator
+from ..core.database import get_db
+from ..models.database import QuantumResult
+import json
 
-interface BondingStatus {
-  status: string
-  throughput: string
-  latency: string
-  interfaces: string[]
-  active_sessions: number
-}
+router = APIRouter(prefix="/api/quantum", tags=["quantum"])
 
-interface QuantumResult {
-  status: string
-  selected_path: string
-  counts: Record<string, number>
-}
+class OptimizeRequest(BaseModel):
+    paths: List[str]
+    user_id: Optional[int] = 1
 
-interface QKDResult {
-  status: string
-  sifted_key_length: number
-  key: string
-}
+@router.post("/optimize")
+async def optimize_quantum_path(request: OptimizeRequest, db: Session = Depends(get_db)):
+    """Run a simple Bell state circuit to pick best path and store result."""
+    paths = request.paths
+    if not paths:
+        return {"error": "No paths provided"}
 
-interface QuantumHistoryItem {
-  id: number
-  user_id: number
-  algorithm: string
-  result_data: string
-  execution_time: number
-  created_at: string
-}
+    qc = QuantumCircuit(2, 2)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.measure([0, 1], [0, 1])
+    sim = AerSimulator()
+    result = sim.run(qc, shots=1024).result()
+    counts = result.get_counts(qc)
 
-interface AuthResponse {
-  status: string
-  user_id: number
-  email: string
-}
+    selected = paths[0] if counts.get("00", 0) > counts.get("11", 0) else paths[-1]
 
-function App() {
-  const [bonding, setBonding] = useState<BondingStatus | null>(null)
-  const [error, setError] = useState('')
-  const [quantum, setQuantum] = useState<QuantumResult | null>(null)
-  const [qkd, setQkd] = useState<QKDResult | null>(null)
-  const [loadingQuantum, setLoadingQuantum] = useState(false)
-  const [loadingQkd, setLoadingQkd] = useState(false)
-  const [quantumHistory, setQuantumHistory] = useState<QuantumHistoryItem[]>([])
+    result_record = QuantumResult(
+        user_id=request.user_id,
+        algorithm="bell_state_path_optimization",
+        result_data=json.dumps({"selected_path": selected, "counts": counts}),
+        execution_time=0.0
+    )
+    db.add(result_record)
+    db.commit()
+    db.refresh(result_record)
 
-  // Auth state
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [userId, setUserId] = useState<number | null>(null)
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
-
-  useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/bonding/status')
-      .then((res) => res.json())
-      .then((data) => setBonding(data))
-      .catch((err) => setError(err.message))
-  }, [])
-
-  const handleAuth = () => {
-    const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register'
-    fetch(`http://127.0.0.1:8000${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((data) => { throw new Error(data.detail || 'Authentication failed') })
-        }
-        return res.json()
-      })
-      .then((data: AuthResponse) => {
-        setUserId(data.user_id)
-        setError('')
-      })
-      .catch((err) => setError(err.message))
-  }
-
-  const runQuantumOptimization = () => {
-    setLoadingQuantum(true)
-    fetch('http://127.0.0.1:8000/api/quantum/optimize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths: ['Starlink', '5G', 'Fiber'], user_id: userId ?? 1 })
-    })
-      .then((res) => res.json())
-      .then((data) => setQuantum(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoadingQuantum(false))
-  }
-
-  const generateQKD = () => {
-    setLoadingQkd(true)
-    fetch('http://127.0.0.1:8000/api/qkd/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ num_bits: 10, user_id: userId ?? 1 })
-    })
-      .then((res) => res.json())
-      .then((data) => setQkd(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoadingQkd(false))
-  }
-
-  const fetchQuantumHistory = () => {
-    const url = userId
-      ? `http://127.0.0.1:8000/api/quantum/results?limit=5&user_id=${userId}`
-      : 'http://127.0.0.1:8000/api/quantum/results?limit=5'
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => setQuantumHistory(data))
-      .catch((err) => setError(err.message))
-  }
-
-  const startBondingSession = () => {
-    if (!userId) {
-      setError('Please log in first')
-      return
+    return {
+        "status": "optimized",
+        "selected_path": selected,
+        "counts": counts,
+        "quantum_result_id": result_record.id
     }
-    fetch(`http://127.0.0.1:8000/api/bonding/start?user_id=${userId}`, {
-      method: 'POST'
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setError('')
-        alert(`Bonding session started with ID ${data.session_id}`)
-      })
-      .catch((err) => setError(err.message))
-  }
 
-  return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Yosemite Quantum Bonding Engine</h1>
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-
-      {/* Auth section */}
-      <div style={{ marginBottom: '2rem', border: '1px solid #ccc', padding: '1rem' }}>
-        <h2>{authMode === 'login' ? 'Login' : 'Register'}</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ marginRight: '0.5rem' }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ marginRight: '0.5rem' }}
-        />
-        <button onClick={handleAuth}>{authMode === 'login' ? 'Login' : 'Register'}</button>
-        <button onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')} style={{ marginLeft: '0.5rem' }}>
-          Switch to {authMode === 'login' ? 'Register' : 'Login'}
-        </button>
-        {userId && <p>Logged in as user ID: {userId}</p>}
-      </div>
-
-      {!bonding && !error && <p>Loading bonding status...</p>}
-      {bonding && (
-        <div>
-          <h2>Bonding Status</h2>
-          <p><strong>Status:</strong> {bonding.status}</p>
-          <p><strong>Throughput:</strong> {bonding.throughput}</p>
-          <p><strong>Latency:</strong> {bonding.latency}</p>
-          <p><strong>Active Sessions:</strong> {bonding.active_sessions}</p>
-          <p><strong>Interfaces:</strong> {bonding.interfaces.join(', ')}</p>
-          <button onClick={startBondingSession}>Start Bonding Session</button>
-        </div>
-      )}
-
-      <div style={{ marginTop: '2rem' }}>
-        <h2>Quantum Path Optimization</h2>
-        <button onClick={runQuantumOptimization} disabled={loadingQuantum}>
-          {loadingQuantum ? 'Running...' : 'Optimize Path'}
-        </button>
-        {quantum && (
-          <div style={{ marginTop: '1rem' }}>
-            <p><strong>Status:</strong> {quantum.status}</p>
-            <p><strong>Selected Path:</strong> {quantum.selected_path}</p>
-            <p><strong>Counts:</strong> {JSON.stringify(quantum.counts)}</p>
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: '2rem' }}>
-        <h2>Quantum Key Distribution (BB84)</h2>
-        <button onClick={generateQKD} disabled={loadingQkd}>
-          {loadingQkd ? 'Generating...' : 'Generate Key'}
-        </button>
-        {qkd && (
-          <div style={{ marginTop: '1rem' }}>
-            <p><strong>Status:</strong> {qkd.status}</p>
-            <p><strong>Sifted Key Length:</strong> {qkd.sifted_key_length}</p>
-            <p><strong>Key:</strong> {qkd.key}</p>
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: '2rem' }}>
-        <h2>Recent Quantum Results</h2>
-        <button onClick={fetchQuantumHistory}>Refresh Results</button>
-        {quantumHistory.length > 0 && (
-          <ul>
-            {quantumHistory.map((result) => (
-              <li key={result.id}>
-                <strong>{result.algorithm}</strong> - {result.result_data} (created at {result.created_at})
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
-
-export default App
+@router.get("/results")
+async def get_quantum_results(
+    limit: int = Query(5, ge=1, le=50),
+    user_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Return recent quantum results, optionally filtered by user."""
+    query = db.query(QuantumResult).order_by(QuantumResult.id.desc())
+    if user_id is not None:
+        query = query.filter(QuantumResult.user_id == user_id)
+    results = query.limit(limit).all()
+    return [
+        {
+            "id": r.id,
+            "user_id": r.user_id,
+            "algorithm": r.algorithm,
+            "result_data": r.result_data,
+            "execution_time": r.execution_time,
+            "created_at": r.created_at.isoformat()
+        }
+        for r in results
+    ]
