@@ -31,6 +31,12 @@ async def generate_qkd(request: QKDRequest, db: Session = Depends(get_db)):
         if a_basis == b_basis:
             sifted.append(int(a_bit))
     key = ''.join(map(str, sifted))
+    if len(key) >= 4:
+        key_masked = f"{key[:2]}{'•' * max(len(key) - 4, 2)}{key[-2:]}"
+    elif key:
+        key_masked = "•" * len(key)
+    else:
+        key_masked = "—"
 
     # Save to database using provided user_id
     result_record = QuantumResult(
@@ -52,7 +58,9 @@ async def generate_qkd(request: QKDRequest, db: Session = Depends(get_db)):
         "status": "success",
         "sifted_key_length": len(sifted),
         "key": key,
+        "key_masked": key_masked,
+        "protocol": "BB84",
         "alice_bases": list(alice_bases),
         "bob_bases": list(bob_bases),
-        "quantum_result_id": result_record.id
+        "quantum_result_id": result_record.id,
     }

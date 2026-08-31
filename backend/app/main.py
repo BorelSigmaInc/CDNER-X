@@ -8,8 +8,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Yosemite Quantum Bonding Engine",
-    version="1.0.0",
-    description="Quantum-Safe Multi-Path Connectivity Platform"
+    version="1.1.0",
+    description="Quantum-safe multi-path connectivity for CDNER-X (customer portal + internal console)",
 )
 
 app.add_middleware(

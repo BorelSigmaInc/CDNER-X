@@ -45,7 +45,11 @@ async def optimize_quantum_path(request: OptimizeRequest, db: Session = Depends(
         "status": "optimized",
         "selected_path": selected,
         "counts": counts,
-        "quantum_result_id": result_record.id
+        "quantum_result_id": result_record.id,
+        "algorithm": "bell_state_path_optimization",
+        "explanation": (
+            f"Bell-state sampling preferred {selected} over the remaining bonded paths."
+        ),
     }
 
 @router.get("/results")
