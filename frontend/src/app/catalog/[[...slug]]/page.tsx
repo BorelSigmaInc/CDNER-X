@@ -12,6 +12,8 @@ import {
   HOME_GROUPS,
   PRODUCT_BY_SLUG,
   PRODUCTS,
+  groupPhoto,
+  productPhoto,
   allCatalogStaticParams,
   catalogHref,
   resolveCatalogPath,
@@ -92,12 +94,8 @@ export default async function CatalogPage({ params }: Props) {
         </p>
         <div className="cdner-product-page">
           <div className="cdner-product-stage">
-            {product.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.image} alt={product.name} />
-            ) : (
-              <span>{product.name}</span>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={productPhoto(product)} alt={product.name} />
           </div>
           <div>
             {product.isNew ? <p className="cdner-new">New</p> : null}
@@ -177,6 +175,8 @@ function HomeView() {
           <div className="cdner-cats">
             {homeGroups.map((group) => (
               <Link className="cdner-cat" key={group.slug} href={`/catalog/products/group/${group.slug}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={groupPhoto(group.slug)} alt="" />
                 <strong>{group.title}</strong>
                 <span>Go to products list</span>
               </Link>

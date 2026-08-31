@@ -756,6 +756,45 @@ export const HOME_GROUPS = [
 export const FEATURED = ['hex_s_2025', 'hap_ax3', 'crs812_ddq', 'rds']
 export const HIGHLIGHTS = ['lamp_5g_r16', 'hap_be_lite', 'hap_be3_media', 'crs804_ddq']
 
+const PREVIEW = '/cdner-media/website/assets/widgets/categories-preview'
+
+export const GROUP_PHOTOS: Record<string, string> = {
+  'ethernet-routers': `${PREVIEW}/ethernet_routers_600.webp`,
+  switches: `${PREVIEW}/switches_600.webp`,
+  'wireless-systems': `${PREVIEW}/wireless_systems_600.webp`,
+  'indoor-wireless': `${PREVIEW}/wireless_home_office_600.webp`,
+  'lte-5g-products': `${PREVIEW}/LTE_5G_600.webp`,
+  'iot-products': `${PREVIEW}/IoT_600.webp`,
+  '60-ghz-products': `${PREVIEW}/60GHz_600.webp`,
+  routerboard: `${PREVIEW}/routerboard_600.webp`,
+  accessories: `${PREVIEW}/ethernet_routers_600.webp`,
+  interfaces: `${PREVIEW}/ethernet_routers_600.webp`,
+  new: `${PREVIEW}/wireless_home_office_600.webp`,
+}
+
+const GROUP_PHOTO_PRIORITY = [
+  'indoor-wireless',
+  'lte-5g-products',
+  '60-ghz-products',
+  'iot-products',
+  'routerboard',
+  'switches',
+  'wireless-systems',
+  'ethernet-routers',
+  'accessories',
+  'interfaces',
+]
+
+export function productPhoto(product: CatalogProduct) {
+  if (product.image) return product.image
+  const group = GROUP_PHOTO_PRIORITY.find((slug) => product.groups.includes(slug))
+  return (group && GROUP_PHOTOS[group]) || GROUP_PHOTOS['ethernet-routers']
+}
+
+export function groupPhoto(slug: string) {
+  return GROUP_PHOTOS[slug]
+}
+
 export function catalogHref(path: string) {
   const clean = path.startsWith('/') ? path : `/${path}`
   if (clean === '/') return '/catalog'

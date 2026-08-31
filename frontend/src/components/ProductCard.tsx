@@ -1,17 +1,14 @@
 import Link from 'next/link'
 import type { CatalogProduct } from '@/lib/catalog-data'
+import { productPhoto } from '@/lib/catalog-data'
 import CatalogPrice from './CatalogPrice'
 
 export default function ProductCard({ product }: { product: CatalogProduct }) {
   return (
     <article className="cdner-product-card">
       <Link href={`/catalog/product/${product.slug}`} className="cdner-product-photo">
-        {product.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.image} alt={product.name} />
-        ) : (
-          <span>{product.name}</span>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={productPhoto(product)} alt={product.name} />
       </Link>
       <div className="cdner-product-body">
         {product.isNew ? <span className="cdner-new">New</span> : null}
