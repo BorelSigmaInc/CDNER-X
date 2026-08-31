@@ -134,3 +134,81 @@ th { color: var(--ibm-muted); font-weight: 500; }
   .grid-2, .grid-3, .grid-4, .docs-layout { grid-template-columns: 1fr; }
   .nav-links { display: none; }
 }
+
+.catalog-subnav {
+  background: #fff;
+  border-bottom: 1px solid var(--ibm-line);
+}
+.catalog-subnav-main, .catalog-subnav-groups {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.catalog-subnav-main a { color: var(--ibm-text); font-size: 14px; font-weight: 500; }
+.catalog-subnav-groups { padding-top: 0; padding-bottom: 12px; }
+.catalog-subnav-groups a { color: var(--ibm-muted); font-size: 13px; }
+.catalog-hero { background: #161616; color: #f4f4f4; border-bottom: 0; }
+.catalog-hero .lede, .catalog-hero .eyebrow { color: #c6c6c6; }
+.catalog-hero h1 { color: #fff; }
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.catalog-featured { grid-template-columns: repeat(2, 1fr); }
+.catalog-card, .catalog-feature {
+  background: #fff;
+  border: 1px solid var(--ibm-line);
+  display: grid;
+}
+.catalog-card { grid-template-columns: 160px 1fr; }
+.catalog-card-media {
+  background: linear-gradient(160deg, #0e6027, #161616);
+  color: #fff;
+  min-height: 140px;
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+  font-size: 13px;
+}
+.catalog-product-media { min-height: 280px; font-size: 22px; }
+.catalog-card-body, .catalog-feature { padding: 16px; }
+.catalog-kicker { display: flex; gap: 8px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ibm-muted); margin: 0 0 8px; }
+.catalog-new { color: var(--brand); }
+.catalog-tags { font-size: 13px; color: var(--ibm-muted); }
+.catalog-price-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: baseline; }
+.catalog-price { font-weight: 600; font-size: 18px; }
+.catalog-usd { color: var(--ibm-muted); font-weight: 400; font-size: 13px; }
+.catalog-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.catalog-section { margin-top: 40px; }
+.catalog-group-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.catalog-group-tile {
+  background: #fff;
+  border: 1px solid var(--ibm-line);
+  padding: 16px;
+  color: var(--ibm-text);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.catalog-group-tile:hover { text-decoration: none; border-color: var(--brand); }
+.catalog-group-tile span { color: var(--ibm-muted); font-size: 13px; }
+.catalog-product { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+.catalog-spec-list { margin: 12px 0; padding-left: 18px; color: var(--ibm-muted); }
+.catalog-price-block { margin: 16px 0; }
+.catalog-page p { max-width: 72ch; }
+
+@media (max-width: 900px) {
+  .catalog-grid, .catalog-featured, .catalog-card, .catalog-group-grid, .catalog-product {
+    grid-template-columns: 1fr;
+  }
+  .catalog-subnav-groups { display: none; }
+}

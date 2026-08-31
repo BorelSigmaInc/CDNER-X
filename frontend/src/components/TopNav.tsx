@@ -18,7 +18,7 @@ export default function TopNav() {
         CDNER-X
       </Link>
       <nav className="nav-links">
-        <Link href="/user">Catalog</Link>
+        <Link href="/catalog">Catalog</Link>
         <Link href="/user">Cost estimator</Link>
         <Link href="/partners">Partners</Link>
         <Link href="/api-doc">Docs</Link>

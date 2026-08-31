@@ -34,6 +34,10 @@ export default function UserPage() {
       .then((data) => {
         setCatalog(data.items)
         setCurrency(data.currency)
+        const presetSku = new URLSearchParams(window.location.search).get('sku')
+        if (presetSku && data.items.some((item) => item.sku === presetSku)) {
+          setQty((current) => ({ ...current, [presetSku]: current[presetSku] || 1 }))
+        }
       })
       .catch((err: Error) => setError(err.message))
   }
