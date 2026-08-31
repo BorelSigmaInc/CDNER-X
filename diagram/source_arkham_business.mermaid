@@ -1,0 +1,32 @@
+flowchart TB
+    subgraph Revenue["Revenue Streams (Earned by Arkham)"]
+        R1[Subscription Fees]
+        R2[Transaction Fee]
+        R3[Premium Add-ons]
+        R4[Data-as-a-Service]
+        R5[Marketplace API Access]
+    end
+    subgraph TieUps["Strategic Tie-Ups"]
+        T1[Equipment Manufacturers]
+        T2[Insurance Companies]
+        T3[Financial Lenders]
+        T4[Blockchain Infrastructure]
+        T5[Cloud Marketplaces]
+        T6[Industry Associations]
+    end
+    subgraph Platform["Arkham Platform"]
+        P1[Dynamic Pricing Engine]
+        P2[Customer Dashboard and API Docs]
+        P3[Billing and Audit]
+        P4[A/B Testing]
+    end
+    subgraph Customers["Customer Segments"]
+        U1[Equipment Rental Companies]
+        U2[Large Contractors]
+        U3[Equipment Brokers]
+    end
+    Customers --> Revenue
+    TieUps --> Revenue
+    TieUps --> Platform
+    Customers --> Platform
+    Platform --> Revenue

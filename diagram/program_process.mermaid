@@ -1,0 +1,31 @@
+flowchart TB
+    subgraph UserJourney["Customer /user"]
+        A[Search catalog SKUs] --> B[POST /marketplace/estimate]
+        B --> C[POST /marketplace/orders]
+        C --> D[Track status]
+        D --> E[POST /marketplace/tickets]
+    end
+
+    subgraph PartnerJourney["Vendor /partners"]
+        F[Log in as partner] --> G[POST /partners/provision]
+        G --> H[Dashboard KPIs]
+        E --> I[On-call queue]
+        H --> I
+    end
+
+    subgraph Lab["Yosemite engine"]
+        J[GET /bonding/status]
+        K[POST /bonding/start]
+        L[POST /quantum/optimize]
+        M[POST /qkd/generate]
+    end
+
+    subgraph Auth["/sign-in"]
+        N[CDNER-X ID] --> O[Password]
+        O --> P[role customer|partner|operator]
+    end
+
+    Auth --> UserJourney
+    Auth --> PartnerJourney
+    C --> Lab
+    G --> Lab

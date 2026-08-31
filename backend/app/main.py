@@ -1,15 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core.database import engine
+from .core.database import engine, SessionLocal
+from .core.schema import ensure_schema
 from .models.database import Base
+from .services.seed import seed_marketplace
 
 Base.metadata.create_all(bind=engine)
+ensure_schema()
+
+db = SessionLocal()
+try:
+    seed_marketplace(db)
+finally:
+    db.close()
 
 app = FastAPI(
-    title="Yosemite Quantum Bonding Engine",
-    version="1.1.0",
-    description="Quantum-safe multi-path connectivity for CDNER-X (customer portal + internal console)",
+    title="CDNER-X Yosemite Platform",
+    version="2.0.0",
+    description="Quantum-safe multi-path connectivity, partner marketplace, and customer estimator",
 )
 
 app.add_middleware(
@@ -20,7 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
 from .api import bonding
 app.include_router(bonding.router)
 
@@ -33,6 +41,10 @@ app.include_router(qkd.router)
 from .api import auth
 app.include_router(auth.router)
 
+from .api import marketplace
+app.include_router(marketplace.router)
+
+
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "quantum": "ready"}
+    return {"status": "healthy", "quantum": "ready", "platform": "cdner-x"}

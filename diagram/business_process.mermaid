@@ -1,0 +1,35 @@
+flowchart TB
+    subgraph Revenue["Revenue earned on CDNER-X"]
+        R1[Subscription fees<br/>bonded access tiers<br/>Standard / Plus / Enterprise]
+        R2[Usage add-ons<br/>BB84 session protection<br/>quantum path optimization]
+        R3[Partner transaction share<br/>% of provisioned monthly]
+        R4[API access<br/>OEM / insurer / ops tooling]
+    end
+
+    subgraph TieUps["Registered vendors"]
+        T1[Alpine Path Networks<br/>multi-path bonding]
+        T2[Glacier QKD Labs<br/>BB84 session keys]
+        T3[Yosemite Quantum Paths<br/>Bell-state egress pick]
+    end
+
+    subgraph Platform["CDNER-X platform"]
+        P1[/sign-in CDNER-X ID]
+        P2[/user estimator + tracking]
+        P3[/partners provision + on-call]
+        P4[/api-doc REST]
+        P5[Yosemite engine<br/>Starlink + 5G + Fiber]
+    end
+
+    subgraph Customers["Customer segments"]
+        U1[Enterprises needing resilient WAN]
+        U2[Field ops needing satellite+cellular bond]
+        U3[Security teams needing QKD overlay]
+    end
+
+    Customers --> P1 --> P2
+    TieUps --> P3
+    P2 -- quote/order --> Revenue
+    P3 -- provision/on-call --> Revenue
+    P5 --> P2
+    P5 --> P3
+    Platform --> P4
