@@ -60,6 +60,10 @@ function App() {
   }, [])
 
   const refreshSessions = useCallback(() => {
+    if (view === 'customer' && !userId) {
+      setSessions([])
+      return Promise.resolve()
+    }
     const scoped = view === 'customer' ? userId : null
     return api.bondingSessions(scoped)
       .then(setSessions)
@@ -67,6 +71,10 @@ function App() {
   }, [view, userId])
 
   const refreshHistory = useCallback(() => {
+    if (view === 'customer' && !userId) {
+      setHistory([])
+      return Promise.resolve()
+    }
     setLoadingHistory(true)
     const scoped = view === 'customer' ? userId : null
     return api.quantumResults(scoped, view === 'internal' ? 12 : 5)
@@ -129,9 +137,13 @@ function App() {
   }
 
   const runQuantumOptimization = () => {
+    if (!userId) {
+      setError('Sign in to recommend a path.')
+      return
+    }
     setLoadingQuantum(true)
     setError('')
-    api.optimize(userId ?? 1)
+    api.optimize(userId)
       .then((data) => {
         setQuantum(data)
         setNotice(`Preferred path: ${data.selected_path}`)
@@ -142,13 +154,13 @@ function App() {
   }
 
   const generateQKD = () => {
-    if (!userId && view === 'customer') {
+    if (!userId) {
       setError('Sign in to protect this session.')
       return
     }
     setLoadingQkd(true)
     setError('')
-    api.generateQkd(userId ?? 1)
+    api.generateQkd(userId)
       .then((data) => {
         setQkd(data)
         setNotice(view === 'customer'
@@ -251,6 +263,15 @@ function App() {
           onOptimize={runQuantumOptimization}
           onGenerateQkd={generateQKD}
         />
+      ) : !user ? (
+        <section className="card">
+          <p className="eyebrow">Internal console</p>
+          <h2>Operator sign-in required</h2>
+          <p className="lede">
+            Circuit counts, sifted keys, and session logs stay off the customer portal
+            and are only shown after you sign in.
+          </p>
+        </section>
       ) : (
         <InternalConsole
           apiBase={API_BASE}

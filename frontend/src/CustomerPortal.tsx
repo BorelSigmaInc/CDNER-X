@@ -99,7 +99,7 @@ export default function CustomerPortal({
         <article className="card">
           <h3>Path recommendation</h3>
           <p>Ask the engine which bonded path should carry the next sensitive burst.</p>
-          <button className="btn" onClick={onOptimize} disabled={loadingQuantum}>
+          <button className="btn" onClick={onOptimize} disabled={!loggedIn || loadingQuantum}>
             {loadingQuantum ? 'Sampling…' : 'Recommend path'}
           </button>
           {quantum && (
