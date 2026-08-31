@@ -1,12 +1,13 @@
-import CatalogNav from '@/components/CatalogNav'
-import TopNav from '@/components/TopNav'
+import CdnerFooter from '@/components/CdnerFooter'
+import CdnerHeader from '@/components/CdnerHeader'
+import './catalog.css'
 
 export default function CatalogLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <TopNav />
-      <CatalogNav />
+    <div className="cdner-site">
+      <CdnerHeader />
       {children}
-    </>
+      <CdnerFooter />
+    </div>
   )
 }

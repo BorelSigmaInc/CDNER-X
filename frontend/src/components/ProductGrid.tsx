@@ -36,7 +36,7 @@ export default function ProductGrid({
       {filtered.length === 0 ? (
         <p className="lede">No products in this group yet. Browse the full catalogue.</p>
       ) : (
-        <div className="catalog-grid">
+        <div className="cdner-product-grid">
           {filtered.map((product) => (
             <ProductCard key={product.slug} product={product} />
           ))}

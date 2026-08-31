@@ -9,6 +9,8 @@ export type CatalogProduct = {
   groups: string[]
   tags: string[]
   description: string
+  image?: string
+  heroSpecs?: string[]
 }
 
 export type CatalogGroup = { slug: string; title: string; blurb: string; products: string[] }
@@ -32,8 +34,17 @@ export const PRODUCTS: CatalogProduct[] = [
     isNew: true,
     groups: ['new', 'ethernet-routers'],
     tags: ['2.5G', 'PoE', 'USB', 'ARM', 'OS v7'],
+    image: '/cdner-media/rb_images/2483_lg.png',
+    heroSpecs: [
+      '2.5G SFP uplink',
+      '5 x 1G ethernet (bonding support)',
+      'PoE-In & PoE-Out',
+      'USB 3 port for storage & file sharing',
+      'Dual-Core ARM CPU + 512 MB RAM',
+      'Flexible powering (12–57 V)',
+    ],
     description:
-      'A compact, affordable wired router featuring a 2.5G SFP port, 5x Gigabit Ethernet, PoE out, USB, and a fast dual-core CPU — ideal for homes, offices, or labs that need reliable performance.',
+      'A compact, affordable wired router featuring a 2.5G SFP port, 5x Gigabit Ethernet, PoE out, USB, and a fast dual-core CPU — ideal for homes, offices, or underfunded labs that need reliable performance.',
   },
   {
     slug: 'hap_ax3',
@@ -44,7 +55,16 @@ export const PRODUCTS: CatalogProduct[] = [
     srpUsd: 139,
     groups: ['ethernet-routers', 'indoor-wireless'],
     tags: ['2.5G', 'PoE', 'WiFi 6', 'Dual-band', 'USB', 'ARM'],
-    description: 'Top-of-the-line AX home access point with Gen 6 wireless, 2.5 Gigabit Ethernet, PoE, and WPA3.',
+    image: '/cdner-media/rb_images/2211_lg.png',
+    heroSpecs: [
+      '2.5G ethernet PoE-In/Out',
+      '4 x 1G ethernet',
+      '802.11ax + Wave 2',
+      'Strong Dual-Band, Dual-Chain wireless',
+      'USB 3 port for storage & file sharing',
+    ],
+    description:
+      'Our top-of-the-line AX home access point. With all the processing power and speed your household might ever need. Gen 6 wireless, 2.5 Gigabit Ethernet, PoE, WPA3, and more!',
   },
   {
     slug: 'rds',
@@ -56,8 +76,18 @@ export const PRODUCTS: CatalogProduct[] = [
     isNew: true,
     groups: ['new', 'ethernet-routers'],
     tags: ['100G', 'NVMe', 'ARM64', 'OS v7'],
+    image: '/cdner-media/rb_images/2438_lg.png',
+    heroSpecs: [
+      "20 x U.2 NVMe's",
+      '100G high-speed networking',
+      '16-core 2 GHz ARM CPU',
+      '32GB DDR4 RAM',
+      'ROSE (CDNER OS Edition)',
+      'Container-ready',
+      'Dual hot-swappable power supplies',
+    ],
     description:
-      'High-performance all-in-one storage, 100G networking, and container platform. 20× U.2 NVMe, ROSE (CDNER OS Edition), dual hot-swap PSU.',
+      'RDS is a high-performance, all-in-one storage, 100G networking, and container platform designed for enterprise environments. Featuring 20 U.2 NVMe storage slots and a special CDNER OS Edition for Storage & Compute (ROSE).',
   },
   {
     slug: 'crs812_ddq',
@@ -69,8 +99,18 @@ export const PRODUCTS: CatalogProduct[] = [
     isNew: true,
     groups: ['new', 'switches'],
     tags: ['400G', '200G', '50G', 'ARM'],
+    image: '/cdner-media/rb_images/2458_lg.png',
+    heroSpecs: [
+      '2 x 400G QSFP56-DD, 2 x 200G QSFP56',
+      '8 x 50G SFP56',
+      '1G/10G Ethernet ports',
+      '4 GB of RAM',
+      'Quad-core 2 GHz ARM CPU',
+      'Dual-redundant hot-swap power supplies',
+      '4 x hot-swap cooling fans',
+    ],
     description:
-      'Powerful 50G / 200G / 400G rack switch with quad-core 2 GHz ARM CPU, dual-redundant power supplies, and 4× hot-swap cooling fans.',
+      'This switch is your next leap forward – a powerful, efficient, and cost-effective way to bring 50G, 200G, and 400G into your rack. Quad-core 2 GHz ARM CPU, dual-redundant power supplies and 4x hot-swap cooling fans, 2x 10G Ethernet, 8x 50G SFP56, 2x 200G QSFP56, and 2x 400G QSFP56-DD ports.',
   },
   {
     slug: 'hap_be_lite',
@@ -622,16 +662,95 @@ export const ALIASES: Record<string, string> = {
   '/download/mobile': '/mobile_app',
 }
 
-export const CATALOG_NAV = [
-  { href: '/catalog', label: 'Home' },
-  { href: '/catalog/hardware', label: 'Hardware' },
-  { href: '/catalog/products', label: 'Search' },
-  { href: '/catalog/software', label: 'Software' },
-  { href: '/catalog/download', label: 'Downloads' },
-  { href: '/catalog/buy', label: 'Distributors' },
-  { href: '/catalog/support', label: 'Support' },
-  { href: '/catalog/training', label: 'Training' },
-  { href: '/catalog/aboutus', label: 'About' },
+export const CATALOG_MENUS = [
+  {
+    label: 'Hardware',
+    href: '/catalog/hardware',
+    groups: [
+      { label: 'New', href: '/catalog/products/group/new' },
+      { label: 'Search', href: '/catalog/products' },
+      { label: 'Ethernet routers', href: '/catalog/products/group/ethernet-routers' },
+      { label: 'Switches', href: '/catalog/products/group/switches' },
+      { label: 'Wireless systems', href: '/catalog/products/group/wireless-systems' },
+      { label: 'Indoor Wireless', href: '/catalog/products/group/indoor-wireless' },
+      { label: 'LTE/5G products', href: '/catalog/products/group/lte-5g-products' },
+      { label: 'IoT products', href: '/catalog/products/group/iot-products' },
+      { label: '60 GHz products', href: '/catalog/products/group/60-ghz-products' },
+      { label: 'CDNER Board', href: '/catalog/products/group/routerboard' },
+      { label: 'Enclosures', href: '/catalog/products/group/enclosures' },
+      { label: 'Interfaces', href: '/catalog/products/group/interfaces' },
+      { label: 'Accessories', href: '/catalog/products/group/accessories' },
+      { label: 'Antennas', href: '/catalog/products/group/antennas' },
+      { label: 'SFP/QSFP', href: '/catalog/products/group/sfp-qsfp' },
+    ],
+  },
+  {
+    label: 'Software',
+    href: '/catalog/software',
+    groups: [
+      { label: 'Downloads', href: '/catalog/download' },
+      { label: 'Changelogs', href: '/catalog/download/changelogs' },
+      { label: 'CDNER OS', href: '/catalog/software' },
+      { label: 'CDNER Desk', href: '/catalog/desk' },
+      { label: 'Mobile apps', href: '/catalog/mobile_app' },
+      { label: 'CDNER Connect', href: '/catalog/bth' },
+      { label: 'Connectivity', href: '/catalog/connectivity' },
+    ],
+  },
+  {
+    label: 'Distributors',
+    href: '/catalog/buy',
+    groups: [
+      { label: 'Buy something (find a distributor)', href: '/catalog/buy' },
+      { label: 'Sell something (become a distributor)', href: '/catalog/becoming_distributor' },
+      { label: 'Made for CDNER', href: '/catalog/mfm' },
+    ],
+  },
+  {
+    label: 'Support',
+    href: '/catalog/support',
+    groups: [
+      { label: 'Documentation', href: '/catalog/docs' },
+      { label: 'Consultants', href: '/catalog/consultants' },
+      { label: 'Forum', href: '/catalog/support' },
+      { label: 'Help', href: '/catalog/support' },
+      { label: 'Security', href: '/catalog/supportsec' },
+      { label: 'Warranty', href: '/catalog/warranty' },
+    ],
+  },
+  {
+    label: 'Training',
+    href: '/catalog/training',
+    groups: [
+      { label: 'About', href: '/catalog/training/about' },
+      { label: 'Schedule', href: '/catalog/training' },
+      { label: 'Training centers & trainers', href: '/catalog/training/centers' },
+      { label: 'Academies', href: '/catalog/training/academy' },
+      { label: 'Train the trainer', href: '/catalog/training/train-the-trainer' },
+      { label: 'Certificate Search', href: '/catalog/certificates' },
+    ],
+  },
+  {
+    label: 'About',
+    href: '/catalog/aboutus',
+    groups: [
+      { label: 'Contacts', href: '/catalog/aboutus' },
+      { label: 'Company', href: '/catalog/aboutus/company' },
+      { label: 'Our Logo', href: '/catalog/logo-review' },
+      { label: 'Vacancies', href: '/catalog/aboutus' },
+    ],
+  },
+]
+
+export const HOME_GROUPS = [
+  'ethernet-routers',
+  'switches',
+  'wireless-systems',
+  'indoor-wireless',
+  'lte-5g-products',
+  'iot-products',
+  '60-ghz-products',
+  'routerboard',
 ]
 
 export const FEATURED = ['hex_s_2025', 'hap_ax3', 'crs812_ddq', 'rds']

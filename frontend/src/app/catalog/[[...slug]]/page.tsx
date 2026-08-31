@@ -3,13 +3,13 @@ import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProductGrid from '@/components/ProductGrid'
 import CatalogPrice from '@/components/CatalogPrice'
+import CdnerHero from '@/components/CdnerHero'
 import {
   ALIASES,
   ARTICLE_BY_PATH,
-  FEATURED,
   GROUP_BY_SLUG,
-  GROUPS,
   HIGHLIGHTS,
+  HOME_GROUPS,
   PRODUCT_BY_SLUG,
   PRODUCTS,
   allCatalogStaticParams,
@@ -27,19 +27,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const path = resolveCatalogPath(slug)
   if (path === '/') {
-    return { title: 'CDNER catalog · CDNER-X', description: 'CDNER hardware, software, and training. Subscribe in local currency.' }
+    return { title: 'CDNER · Secure Connectivity Without Boundaries', description: 'CDNER hardware, software, and training.' }
   }
   if (path.startsWith('/product/')) {
     const product = PRODUCT_BY_SLUG[path.slice('/product/'.length)]
-    if (product) return { title: `${product.name} · CDNER catalog`, description: product.description }
+    if (product) return { title: `CDNER · ${product.name}`, description: product.description }
   }
   if (path.startsWith('/products/group/')) {
     const group = GROUP_BY_SLUG[path.slice('/products/group/'.length)]
-    if (group) return { title: `${group.title} · CDNER catalog`, description: group.blurb }
+    if (group) return { title: group.title, description: group.blurb }
   }
   const article = ARTICLE_BY_PATH[path]
-  if (article) return { title: `${article.title} · CDNER catalog`, description: article.lede }
-  return { title: 'CDNER catalog · CDNER-X' }
+  if (article) return { title: `CDNER · ${article.title}`, description: article.lede }
+  return { title: 'CDNER' }
 }
 
 export default async function CatalogPage({ params }: Props) {
@@ -54,10 +54,10 @@ export default async function CatalogPage({ params }: Props) {
   if (resolved === '/hardware' || resolved === '/products') {
     const article = ARTICLE_BY_PATH[resolved]
     return (
-      <div className="page catalog-page">
-        <p className="eyebrow">CDNER-X / catalog{resolved}</p>
+      <div className="cdner-wrap">
+        <p className="cdner-kicker">{article?.title}</p>
         <h1>{article?.title || 'Products'}</h1>
-        <p className="lede">{article?.lede}</p>
+        <p className="cdner-lede">{article?.lede}</p>
         <ProductGrid products={PRODUCTS} searchable={resolved === '/products'} />
       </div>
     )
@@ -67,10 +67,10 @@ export default async function CatalogPage({ params }: Props) {
     if (!group) notFound()
     const products = group.products.map((id) => PRODUCT_BY_SLUG[id]).filter(Boolean)
     return (
-      <div className="page catalog-page">
-        <p className="eyebrow">CDNER-X / catalog / products / group</p>
+      <div className="cdner-wrap">
+        <p className="cdner-crumb"><Link href="/catalog/hardware">Hardware</Link> / {group.title}</p>
         <h1>{group.title}</h1>
-        <p className="lede">{group.blurb}</p>
+        <p className="cdner-lede">{group.blurb}</p>
         <ProductGrid products={products} />
         <p style={{ marginTop: 24 }}><Link href="/catalog/hardware">Browse for more</Link></p>
       </div>
@@ -82,49 +82,53 @@ export default async function CatalogPage({ params }: Props) {
     const related = PRODUCTS.filter((p) => p.slug !== product.slug && p.groups.some((g) => product.groups.includes(g))).slice(0, 4)
     const upgrade = product.upgradeSku ? PRODUCTS.find((p) => p.sku === product.upgradeSku) : undefined
     return (
-      <div className="page catalog-page">
-        <p className="eyebrow">
-          <Link href="/catalog">Catalog</Link>
+      <div className="cdner-wrap">
+        <p className="cdner-crumb">
+          <Link href="/catalog">CDNER</Link>
           {' / '}
           <Link href={`/catalog/products/group/${product.groups[0]}`}>
             {GROUP_BY_SLUG[product.groups[0]]?.title || product.groups[0]}
           </Link>
         </p>
-        <div className="catalog-product">
-          <div className="catalog-card-media catalog-product-media" aria-hidden>
-            <span>{product.name}</span>
+        <div className="cdner-product-page">
+          <div className="cdner-product-stage">
+            {product.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={product.image} alt={product.name} />
+            ) : (
+              <span>{product.name}</span>
+            )}
           </div>
           <div>
-            <p className="catalog-kicker">
-              {product.isNew ? <span className="catalog-new">New</span> : null}
-              {product.sku ? <span>{product.sku}</span> : <span>Retail hardware</span>}
-            </p>
+            {product.isNew ? <p className="cdner-new">New</p> : null}
             <h1>{product.name}</h1>
-            <p className="lede">{product.description}</p>
-            <p className="catalog-tags">{product.tags.join(' · ')}</p>
-            <div className="catalog-price-block">
-              {product.monthlyUsd != null && (
-                <p><strong><CatalogPrice usd={product.monthlyUsd} suffix="/mo managed" /></strong></p>
-              )}
-              {product.srpUsd != null && (
-                <p><CatalogPrice usd={product.srpUsd} suffix=" suggested retail" /></p>
-              )}
-              <p className="lede">Location currency is converted from USD. Term 12/24/36 mo (−5/−12/−20%), volume, and 30% upgrade credit apply on CDNER-X subscriptions.</p>
-            </div>
-            <div className="catalog-card-actions">
+            <p className="cdner-lede">{product.description}</p>
+            <ul>
+              {(product.heroSpecs || product.tags).map((spec) => (
+                <li key={spec}>{spec}</li>
+              ))}
+            </ul>
+            <p className="cdner-product-price">
+              {product.srpUsd != null && <CatalogPrice usd={product.srpUsd} suffix=" suggested retail*" />}
+            </p>
+            {product.monthlyUsd != null && (
+              <p className="cdner-product-price"><CatalogPrice usd={product.monthlyUsd} suffix="/mo managed" /></p>
+            )}
+            <p className="cdner-lede">* Suggested retail price. Contact an official distributor for availability and local pricing.</p>
+            <div className="cdner-hero-actions">
               {product.sku ? (
-                <Link className="btn" href={`/user?sku=${encodeURIComponent(product.sku)}`}>Subscribe on CDNER-X</Link>
+                <Link className="cdner-btn cdner-btn-light" href={`/user?sku=${encodeURIComponent(product.sku)}`}>Subscribe</Link>
               ) : null}
-              <Link className="btn secondary" href="/catalog/buy">Find retailer</Link>
+              <Link className="cdner-btn cdner-btn-light" href="/catalog/buy">Find retailer</Link>
               {upgrade ? (
-                <Link className="btn ghost" href={`/catalog/product/${upgrade.slug}`}>Clever upgrade → {upgrade.name}</Link>
+                <Link className="cdner-btn cdner-btn-light" href={`/catalog/product/${upgrade.slug}`}>Upgrade → {upgrade.name}</Link>
               ) : null}
             </div>
           </div>
         </div>
         {related.length > 0 && (
-          <section style={{ marginTop: 40 }}>
-            <h2>Related machines</h2>
+          <section style={{ marginTop: 48 }}>
+            <h2>Browse for more</h2>
             <ProductGrid products={related} />
           </section>
         )}
@@ -135,17 +139,16 @@ export default async function CatalogPage({ params }: Props) {
   const article = ARTICLE_BY_PATH[resolved]
   if (!article) notFound()
   return (
-    <div className="page catalog-page">
-      <p className="eyebrow">CDNER-X / catalog{resolved}</p>
+    <div className="cdner-wrap cdner-article">
       <h1>{article.title}</h1>
-      {article.lede && <p className="lede">{article.lede}</p>}
-      {article.paragraphs?.map((p) => <p key={p.slice(0, 40)}>{p}</p>)}
+      {article.lede && <p className="cdner-lede">{article.lede}</p>}
+      {article.paragraphs?.map((p) => <p key={p.slice(0, 48)}>{p}</p>)}
       {article.sections && (
-        <div className="grid-3" style={{ marginTop: 24 }}>
+        <div className="cdner-soft" style={{ marginTop: 24 }}>
           {article.sections.map((section) => (
-            <article className="card" key={section.title}>
+            <article key={section.title}>
               <h3>{section.title}</h3>
-              <p className="lede">{section.body}</p>
+              <p>{section.body}</p>
               {section.href && <Link href={section.href}>Open</Link>}
             </article>
           ))}
@@ -156,97 +159,69 @@ export default async function CatalogPage({ params }: Props) {
 }
 
 function HomeView() {
-  const featured = FEATURED.map((id) => PRODUCT_BY_SLUG[id]).filter(Boolean)
   const highlights = HIGHLIGHTS.map((id) => PRODUCT_BY_SLUG[id]).filter(Boolean)
+  const homeGroups = HOME_GROUPS.map((slug) => GROUP_BY_SLUG[slug]).filter(Boolean)
   return (
     <>
-      <div className="hero-band catalog-hero">
-        <div className="page">
-          <p className="eyebrow">CDNER · Secure connectivity without boundaries</p>
-          <h1>Hardware that works harder</h1>
-          <p className="lede">
-            Routers, switches, wireless, LTE/5G, and compute from the CDNER line — listed here as the public catalogue,
-            with CDNER-X subscriptions in your location currency (USD equivalent).
+      <CdnerHero />
+      <section className="cdner-band">
+        <div className="cdner-wrap" style={{ paddingBottom: 24 }}>
+          <p className="cdner-kicker">Hardware</p>
+          <h2>Enhance Your Network</h2>
+          <p className="cdner-lede">With Hardware That Works Harder</p>
+          <p className="cdner-lede">
+            CDNER offers routers, switches, and wireless systems for every type of network – from home offices and small
+            businesses to carrier-grade ISP infrastructure. Whether you&apos;re building a setup for a few users or thousands,
+            there&apos;s a CDNER device that fits your needs and your budget.
           </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-            <Link className="btn" href="/catalog/hardware">View all hardware</Link>
-            <Link className="btn secondary" href="/user">Estimate a subscription</Link>
-            <Link className="btn ghost" href="/catalog/buy">Find a distributor</Link>
-          </div>
-        </div>
-      </div>
-      <div className="page catalog-page">
-        <div className="catalog-grid catalog-featured">
-          {featured.map((product) => (
-            <article className="catalog-feature" key={product.slug}>
-              <p className="catalog-kicker">{product.isNew ? 'New' : product.tags[0]}</p>
-              <h2><Link href={`/catalog/product/${product.slug}`}>{product.name}</Link></h2>
-              <p className="lede">{product.description}</p>
-              <ul className="catalog-spec-list">
-                {product.tags.map((tag) => <li key={tag}>{tag}</li>)}
-              </ul>
-              <p className="catalog-price-row">
-                {product.monthlyUsd != null && <CatalogPrice usd={product.monthlyUsd} suffix="/mo" className="catalog-price" />}
-                {product.srpUsd != null && <CatalogPrice usd={product.srpUsd} suffix=" SRP" />}
-              </p>
-              <div className="catalog-card-actions">
-                <Link className="btn ghost" href={`/catalog/product/${product.slug}`}>Details</Link>
-                <Link className="btn" href={product.sku ? `/user?sku=${encodeURIComponent(product.sku)}` : '/catalog/buy'}>
-                  {product.sku ? 'Subscribe' : 'Find retailer'}
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <section className="catalog-section">
-          <h2>Enhance your network</h2>
-          <p className="lede">Hardware for home offices, enterprises, and carrier-grade ISP infrastructure.</p>
-          <div className="catalog-group-grid">
-            {GROUPS.filter((g) => g.slug !== 'new').map((group) => (
-              <Link className="catalog-group-tile" key={group.slug} href={`/catalog/products/group/${group.slug}`}>
+          <div className="cdner-cats">
+            {homeGroups.map((group) => (
+              <Link className="cdner-cat" key={group.slug} href={`/catalog/products/group/${group.slug}`}>
                 <strong>{group.title}</strong>
-                <span>{group.products.length} {group.products.length === 1 ? 'machine' : 'machines'}</span>
+                <span>Go to products list</span>
               </Link>
             ))}
           </div>
-        </section>
-
-        <section className="catalog-section">
-          <h2>Know our tech</h2>
-          <ProductGrid products={highlights} />
-        </section>
-
-        <section className="catalog-section">
+          <p style={{ marginTop: 16 }}><Link href="/catalog/hardware">View All</Link></p>
+        </div>
+      </section>
+      <div className="cdner-wrap">
+        <p className="cdner-kicker">Video Blog</p>
+        <h2>Know our tech</h2>
+        <ProductGrid products={highlights} />
+        <section style={{ marginTop: 56 }}>
           <h2>Software and connectivity</h2>
-          <div className="grid-4">
-            <article className="card">
-              <h3>CDNER OS</h3>
-              <p className="lede">Routing, wireless, containers, and Cloud Router.</p>
-              <Link href="/catalog/software">Open</Link>
-            </article>
-            <article className="card">
+          <div className="cdner-soft">
+            <Link href="/catalog/connectivity">
+              <h3>Connectivity</h3>
+              <p>Seamless networking with latest eSIM-enabled devices designed for IoT, enterprise, and mobile networking.</p>
+            </Link>
+            <Link href="/catalog/bth">
+              <h3>CDNER Connect App</h3>
+              <p>Free secure VPN access anywhere — unleash the power of your router.</p>
+            </Link>
+            <Link href="/catalog/desk">
               <h3>CDNER Desk</h3>
-              <p className="lede">Free desktop management for Windows, macOS, and Linux.</p>
-              <Link href="/catalog/desk">Open</Link>
-            </article>
-            <article className="card">
-              <h3>CDNER Connect</h3>
-              <p className="lede">VPN and file sharing even behind NAT.</p>
-              <Link href="/catalog/bth">Open</Link>
-            </article>
-            <article className="card">
-              <h3>eSIM connectivity</h3>
-              <p className="lede">Outdoor LTE/5G and IoT without swapping SIMs.</p>
-              <Link href="/catalog/connectivity">Open</Link>
-            </article>
+              <p>Our Pro desktop app with endless configuration possibilities is available for all operating systems.</p>
+            </Link>
+            <Link href="/catalog/mobile_app">
+              <h3>Home App</h3>
+              <p>Simple and easy way to manage your home router. For Android and iOS.</p>
+            </Link>
           </div>
         </section>
-
-        <section className="catalog-section">
-          <h2>Training</h2>
-          <p className="lede">Certified sessions worldwide. More than 30,000 CDNER certificates issued each year.</p>
-          <Link className="btn ghost" href="/catalog/training">Training schedule</Link>
+        <section style={{ marginTop: 56 }}>
+          <p className="cdner-kicker">CDNER Certified</p>
+          <h2>Training Program</h2>
+          <p className="cdner-lede">
+            CDNER training sessions are organized and provided by CDNER Training Centers at various locations around the
+            World. They are attended by network engineers, integrators and managers, who would like to learn about routing
+            and managing wired and wireless networks using CDNER OS.
+          </p>
+          <div className="cdner-hero-actions" style={{ marginTop: 16 }}>
+            <Link className="cdner-btn cdner-btn-light" href="/catalog/training">Training Schedule</Link>
+            <Link className="cdner-btn cdner-btn-light" href="/catalog/training/centers">Locate Trainer</Link>
+          </div>
         </section>
       </div>
     </>

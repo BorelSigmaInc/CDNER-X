@@ -4,33 +4,34 @@ import CatalogPrice from './CatalogPrice'
 
 export default function ProductCard({ product }: { product: CatalogProduct }) {
   return (
-    <article className="catalog-card">
-      <div className="catalog-card-media" aria-hidden>
-        <span>{product.name.split(' ').slice(0, 2).join(' ')}</span>
-      </div>
-      <div className="catalog-card-body">
-        <p className="catalog-kicker">
-          {product.isNew ? <span className="catalog-new">New</span> : null}
-          {product.sku ? <span>Subscription</span> : <span>Hardware</span>}
-        </p>
+    <article className="cdner-product-card">
+      <Link href={`/catalog/product/${product.slug}`} className="cdner-product-photo">
+        {product.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.image} alt={product.name} />
+        ) : (
+          <span>{product.name}</span>
+        )}
+      </Link>
+      <div className="cdner-product-body">
+        {product.isNew ? <span className="cdner-new">New</span> : null}
         <h3><Link href={`/catalog/product/${product.slug}`}>{product.name}</Link></h3>
-        <p className="lede">{product.description}</p>
-        <p className="catalog-tags">{product.tags.join(' · ')}</p>
-        <p className="catalog-price-row">
+        <p>{product.description}</p>
+        <p className="cdner-product-price">
+          {product.srpUsd != null && <CatalogPrice usd={product.srpUsd} suffix="*" />}
           {product.monthlyUsd != null && (
-            <CatalogPrice usd={product.monthlyUsd} suffix="/mo" className="catalog-price" />
+            <>
+              {' '}
+              <CatalogPrice usd={product.monthlyUsd} suffix="/mo" />
+            </>
           )}
-          {product.srpUsd != null && (
-            <CatalogPrice usd={product.srpUsd} suffix=" SRP" />
-          )}
-          {product.monthlyUsd == null && product.srpUsd == null && <span>Ask a distributor</span>}
         </p>
-        <div className="catalog-card-actions">
-          <Link className="btn ghost" href={`/catalog/product/${product.slug}`}>Details</Link>
+        <div className="cdner-hero-actions">
+          <Link className="cdner-btn cdner-btn-light" href={`/catalog/product/${product.slug}`}>Details</Link>
           {product.sku ? (
-            <Link className="btn" href={`/user?sku=${encodeURIComponent(product.sku)}`}>Subscribe</Link>
+            <Link className="cdner-btn cdner-btn-light" href={`/user?sku=${encodeURIComponent(product.sku)}`}>Subscribe</Link>
           ) : (
-            <Link className="btn secondary" href="/catalog/buy">Find retailer</Link>
+            <Link className="cdner-btn cdner-btn-light" href="/catalog/buy">Find retailer</Link>
           )}
         </div>
       </div>
