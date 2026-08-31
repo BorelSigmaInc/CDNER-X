@@ -35,7 +35,7 @@ export default function ApiDocPage() {
           <h1>CDNER-X platform APIs</h1>
           <p className="lede">
             REST interface for quantum-safe bonding, QKD, partner provisioning, and customer estimates.
-            Interactive OpenAPI lives at <code>/docs</code> on the API host.
+            Interactive OpenAPI lives at <a href="/docs">/docs</a> on this host.
           </p>
 
           <h2 id="what-is-cdner-x">What is CDNER-X</h2>
