@@ -38,7 +38,7 @@ def main() -> int:
         ["cloudflared", "tunnel", "route", "dns", TUNNEL_NAME, HOSTNAME],
         check=False,
     )
-    subprocess.run(["pkill", "-HUP", "-f", "cloudflared tunnel"], check=False)
+    print("Restart cloudflared with the existing --config path to load the new hostname.")
     return 0
 
 
