@@ -12,7 +12,11 @@ ENGINE_DIR = os.path.join(os.getcwd(), "bonding-engine")
 ENGINE_BINARY = os.path.join(ENGINE_DIR, "target", "debug", "bonding_engine")
 
 def is_engine_running():
-    """Check if bonding engine process is running."""
+    """Check if bonding engine is active (env var for Docker, psutil for local)."""
+    # In Docker, the engine runs in a separate container; use environment flag.
+    if os.getenv("ENGINE_ACTIVE", "false").lower() == "true":
+        return True
+    # Fallback: local process detection (for non-Docker development)
     for proc in psutil.process_iter(['pid', 'name']):
         if 'bonding_engine' in proc.info['name']:
             return True
