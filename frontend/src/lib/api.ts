@@ -10,18 +10,51 @@ export interface AuthUser {
   partner_id?: number | null
 }
 
+export interface Money {
+  usd: number
+  amount: number
+  currency: string
+  rate: number
+  symbol: string
+  label: string
+}
+
 export interface CatalogOffer {
   id: number
   sku: string
   name: string
   category: string
+  family?: string
   plan: string
+  specs?: string
+  description: string
+  upgrade_sku?: string | null
   monthly_usd: number
   setup_usd: number
-  description: string
+  retail_usd: number
+  monthly: Money
+  setup: Money
+  retail: Money
   partner_id: number
   partner?: string | null
   region?: string | null
+}
+
+export interface CatalogResponse {
+  currency: string
+  items: CatalogOffer[]
+  upgrades: Record<string, string>
+  discounts: {
+    term: { months: number; percent: number }[]
+    volume: { qty: number; percent: number }[]
+    upgrade_credit_percent: number
+  }
+}
+
+export function detectLocale() {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const language = navigator.language
+  return { tz, language }
 }
 
 async function parseError(res: Response): Promise<string> {
@@ -46,6 +79,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
+const locQuery = () => {
+  if (typeof window === 'undefined') return ''
+  const { tz } = detectLocale()
+  return `tz=${encodeURIComponent(tz)}`
+}
+
 export const api = {
   health: () => request<{ status: string; quantum: string }>('/health'),
   login: (email: string, password: string) =>
@@ -58,9 +97,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email, password, role, company }),
     }),
-  catalog: () => request<CatalogOffer[]>('/api/marketplace/catalog'),
-  meta: () => request<{ regions: string[]; plans: { id: string; label: string }[] }>('/api/marketplace/meta'),
-  estimate: (payload: object) => request<Record<string, unknown>>('/api/marketplace/estimate', { method: 'POST', body: JSON.stringify(payload) }),
+  catalog: () => request<CatalogResponse>(`/api/marketplace/catalog?${locQuery()}`),
+  fx: () => request<{ currency: string; usd_rate: number; symbol: string }>(`/api/marketplace/fx?${locQuery()}`),
+  meta: () => request<{ regions: string[]; plans: { id: string; label: string }[] }>(`/api/marketplace/meta?${locQuery()}`),
+  estimate: (payload: object) =>
+    request<Record<string, unknown>>('/api/marketplace/estimate', {
+      method: 'POST',
+      body: JSON.stringify({ ...payload, ...detectLocale() }),
+    }),
   orders: (userId?: number, partnerId?: number) => {
     const q = new URLSearchParams()
     if (userId) q.set('user_id', String(userId))
@@ -68,6 +112,7 @@ export const api = {
     return request<Record<string, unknown>[]>(`/api/marketplace/orders?${q}`)
   },
   placeOrder: (payload: object) => request<Record<string, unknown>>('/api/marketplace/orders', { method: 'POST', body: JSON.stringify(payload) }),
+  upgrade: (payload: object) => request<Record<string, unknown>>('/api/marketplace/upgrade', { method: 'POST', body: JSON.stringify(payload) }),
   tickets: (opts: { partnerId?: number; userId?: number } = {}) => {
     const q = new URLSearchParams()
     if (opts.partnerId) q.set('partner_id', String(opts.partnerId))
@@ -90,14 +135,4 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ num_bits: 16, user_id: userId }),
     }),
-  quantumResults: (userId?: number | null, limit = 8) => {
-    const q = new URLSearchParams({ limit: String(limit) })
-    if (userId) q.set('user_id', String(userId))
-    return request<Record<string, unknown>[]>(`/api/quantum/results?${q}`)
-  },
-  bondingSessions: (userId?: number | null, limit = 8) => {
-    const q = new URLSearchParams({ limit: String(limit) })
-    if (userId) q.set('user_id', String(userId))
-    return request<Record<string, unknown>[]>(`/api/bonding/sessions?${q}`)
-  },
 }

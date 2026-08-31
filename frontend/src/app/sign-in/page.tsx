@@ -113,7 +113,7 @@ export default function SignInPage() {
 
         <div className="alt">
           Forgot CDNER-X ID? Contact Borel Sigma operations.
-          <p>Demo partner logins use <code>vendor.alpine@cdner-x.test</code> / <code>ChangeMe#31</code>.</p>
+          <p>Demo partner: <code>vendor.access@cdner.test</code> / <code>ChangeMe#31</code> (CDNER Access).</p>
         </div>
       </main>
     </div>

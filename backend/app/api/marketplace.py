@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from typing import Optional, List
 import json
 
 from ..core.database import get_db
+from ..core.fx import convert, detect_currency
 from ..models.database import (
     User,
     Partner,
@@ -18,38 +19,120 @@ router = APIRouter(prefix="/api/marketplace", tags=["marketplace"])
 
 REGIONS = ["eu-central", "uk-south", "us-east", "ap-southeast"]
 PLANS = [
-    {"id": "standard", "label": "Standard bonded access", "paths": 3, "multiplier": 1.0},
-    {"id": "plus", "label": "Plus with QKD", "paths": 3, "multiplier": 1.35},
-    {"id": "enterprise", "label": "Enterprise multi-site", "paths": 6, "multiplier": 2.4},
+    {"id": "starter", "label": "Starter hardware", "paths": 1, "multiplier": 1.0},
+    {"id": "standard", "label": "Standard + path bonding", "paths": 3, "multiplier": 1.15},
+    {"id": "plus", "label": "Plus + 5G/QKD overlay", "paths": 3, "multiplier": 1.35},
+    {"id": "enterprise", "label": "Enterprise fabric", "paths": 6, "multiplier": 1.6},
 ]
+TERM_BREAKS = [(36, 0.20), (24, 0.12), (12, 0.05), (3, 0.02)]
 
 
-def _offer_payload(offer: CatalogOffer, partner: Optional[Partner] = None) -> dict:
+def _term_discount(months: int) -> float:
+    for threshold, pct in TERM_BREAKS:
+        if months >= threshold:
+            return pct
+    return 0.0
+
+
+def _volume_discount(qty: int) -> float:
+    if qty >= 5:
+        return 0.12
+    if qty >= 3:
+        return 0.08
+    if qty >= 2:
+        return 0.04
+    return 0.0
+
+
+def _currency(request: Request, explicit: Optional[str] = None, tz: Optional[str] = None) -> str:
+    return detect_currency(
+        explicit=explicit,
+        country=request.headers.get("cf-ipcountry") or request.headers.get("x-vercel-ip-country"),
+        language=request.headers.get("accept-language"),
+        tz=tz,
+    )
+
+
+def _hardware_offers(db: Session):
+    return (
+        db.query(CatalogOffer)
+        .filter(CatalogOffer.sku.like("CDNER-%"))
+        .order_by(CatalogOffer.monthly_usd)
+        .all()
+    )
+
+
+def _offer_payload(offer: CatalogOffer, partner: Optional[Partner], currency: str) -> dict:
     return {
         "id": offer.id,
         "sku": offer.sku,
         "name": offer.name,
         "category": offer.category,
+        "family": offer.family,
         "plan": offer.plan,
+        "specs": offer.specs,
+        "description": offer.description,
+        "upgrade_sku": offer.upgrade_sku,
         "monthly_usd": offer.monthly_usd,
         "setup_usd": offer.setup_usd,
-        "description": offer.description,
+        "retail_usd": offer.retail_usd,
+        "monthly": convert(offer.monthly_usd or 0, currency),
+        "setup": convert(offer.setup_usd or 0, currency),
+        "retail": convert(offer.retail_usd or 0, currency),
         "partner_id": offer.partner_id,
         "partner": partner.company if partner else None,
         "region": partner.region if partner else None,
     }
 
 
+@router.get("/fx")
+async def fx_meta(
+    request: Request,
+    currency: Optional[str] = Query(None),
+    tz: Optional[str] = Query(None),
+):
+    code = _currency(request, currency, tz)
+    sample = convert(1.0, code)
+    return {
+        "currency": code,
+        "usd_rate": sample["rate"],
+        "symbol": sample["symbol"],
+        "one_usd": sample,
+        "source": "location",
+    }
+
+
 @router.get("/catalog")
-async def catalog(db: Session = Depends(get_db)):
-    offers = db.query(CatalogOffer).order_by(CatalogOffer.id).all()
+async def catalog(
+    request: Request,
+    currency: Optional[str] = Query(None),
+    tz: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    code = _currency(request, currency, tz)
+    offers = _hardware_offers(db)
     partners = {p.id: p for p in db.query(Partner).all()}
-    return [_offer_payload(o, partners.get(o.partner_id)) for o in offers]
+    return {
+        "currency": code,
+        "items": [_offer_payload(o, partners.get(o.partner_id), code) for o in offers],
+        "upgrades": {o.sku: o.upgrade_sku for o in offers if o.upgrade_sku},
+        "discounts": {
+            "term": [{"months": m, "percent": int(p * 100)} for m, p in reversed(TERM_BREAKS)],
+            "volume": [{"qty": 2, "percent": 4}, {"qty": 3, "percent": 8}, {"qty": 5, "percent": 12}],
+            "upgrade_credit_percent": 30,
+        },
+    }
 
 
 @router.get("/meta")
-async def meta():
-    return {"regions": REGIONS, "plans": PLANS, "currency": "USD"}
+async def meta(request: Request, currency: Optional[str] = Query(None), tz: Optional[str] = Query(None)):
+    code = _currency(request, currency, tz)
+    return {
+        "regions": REGIONS,
+        "plans": PLANS,
+        "currency": code,
+        "fx": convert(1.0, code),
+    }
 
 
 class EstimateItem(BaseModel):
@@ -62,16 +145,21 @@ class EstimateRequest(BaseModel):
     region: str
     term_months: int = Field(default=12, ge=1, le=36)
     items: List[EstimateItem]
+    currency: Optional[str] = None
+    tz: Optional[str] = None
+    from_sku: Optional[str] = None
 
 
 @router.post("/estimate")
-async def create_estimate(request: EstimateRequest, db: Session = Depends(get_db)):
+async def create_estimate(request: EstimateRequest, http: Request, db: Session = Depends(get_db)):
     if request.region not in REGIONS:
         raise HTTPException(status_code=400, detail="Unknown region")
-    offers = {o.sku: o for o in db.query(CatalogOffer).all()}
+    currency = _currency(http, request.currency, request.tz)
+    offers = {o.sku: o for o in _hardware_offers(db)}
     lines = []
     monthly = 0.0
     setup = 0.0
+    qty_total = 0
     for item in request.items:
         offer = offers.get(item.sku)
         if not offer:
@@ -80,20 +168,31 @@ async def create_estimate(request: EstimateRequest, db: Session = Depends(get_db
         line_setup = offer.setup_usd * item.quantity
         monthly += line_monthly
         setup += line_setup
+        qty_total += item.quantity
         lines.append({
             "sku": offer.sku,
             "name": offer.name,
             "quantity": item.quantity,
             "monthly_usd": line_monthly,
             "setup_usd": line_setup,
+            "upgrade_sku": offer.upgrade_sku,
             "partner_id": offer.partner_id,
         })
+    term_pct = _term_discount(request.term_months)
+    vol_pct = _volume_discount(qty_total)
+    net_monthly = round(monthly * (1 - term_pct) * (1 - vol_pct), 2)
+    upgrade_credit = 0.0
+    if request.from_sku and request.from_sku in offers:
+        source = offers[request.from_sku]
+        if any(line["sku"] == source.upgrade_sku for line in lines):
+            upgrade_credit = round(source.monthly_usd * 0.30 * min(request.term_months, 12), 2)
+    contract = round(net_monthly * request.term_months + setup - upgrade_credit, 2)
     record = Estimate(
         user_id=request.user_id,
         region=request.region,
         term_months=request.term_months,
         items_json=json.dumps(lines),
-        monthly_usd=monthly,
+        monthly_usd=net_monthly,
         setup_usd=setup,
         status="priced",
     )
@@ -103,11 +202,19 @@ async def create_estimate(request: EstimateRequest, db: Session = Depends(get_db
     return {
         "estimate_id": record.id,
         "region": record.region,
-        "term_months": record.term_months,
+        "term_months": request.term_months,
         "items": lines,
-        "monthly_usd": monthly,
-        "setup_usd": setup,
-        "contract_usd": round(monthly * request.term_months + setup, 2),
+        "currency": currency,
+        "list_monthly": convert(monthly, currency),
+        "monthly": convert(net_monthly, currency),
+        "setup": convert(setup, currency),
+        "contract": convert(contract, currency),
+        "upgrade_credit": convert(upgrade_credit, currency),
+        "discounts_applied": {
+            "term_percent": int(term_pct * 100),
+            "volume_percent": int(vol_pct * 100),
+            "upgrade_credit_usd": upgrade_credit,
+        },
         "status": record.status,
     }
 
@@ -148,7 +255,44 @@ async def place_order(request: OrderRequest, db: Session = Depends(get_db)):
         "region": order.region,
         "plan": order.plan,
         "partner_id": order.partner_id,
-        "message": "Service request recorded. Partner on-call will confirm path bonding.",
+        "message": "Hardware subscription recorded. Partner will ship and bond the CDNER machine.",
+    }
+
+
+class UpgradeRequest(BaseModel):
+    user_id: int
+    order_id: int
+    term_months: int = 12
+
+
+@router.post("/upgrade")
+async def upgrade_order(request: UpgradeRequest, http: Request, db: Session = Depends(get_db)):
+    order = db.query(ServiceOrder).filter(ServiceOrder.id == request.order_id, ServiceOrder.user_id == request.user_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    current = db.query(CatalogOffer).filter(CatalogOffer.id == order.offer_id).first()
+    if not current or not current.upgrade_sku:
+        raise HTTPException(status_code=400, detail="This machine has no clever upgrade path")
+    nxt = db.query(CatalogOffer).filter(CatalogOffer.sku == current.upgrade_sku).first()
+    if not nxt:
+        raise HTTPException(status_code=400, detail="Upgrade SKU missing")
+    credit = round((current.monthly_usd or 0) * 0.30 * min(request.term_months, 12), 2)
+    order.offer_id = nxt.id
+    order.service_name = nxt.name
+    order.monthly_usd = nxt.monthly_usd
+    order.plan = nxt.plan
+    order.status = "provisioning"
+    db.commit()
+    db.refresh(order)
+    currency = _currency(http)
+    return {
+        "order_id": order.id,
+        "from_sku": current.sku,
+        "to_sku": nxt.sku,
+        "to_name": nxt.name,
+        "monthly": convert(nxt.monthly_usd or 0, currency),
+        "upgrade_credit": convert(credit, currency),
+        "message": f"Upgraded {current.name} → {nxt.name} with 30% residual credit.",
     }
 
 

@@ -8,10 +8,10 @@ export default function HomePage() {
       <div className="hero-band">
         <div className="page">
           <p className="eyebrow">CDNER-X cloud</p>
-          <h1>Quantum-safe multi-path connectivity</h1>
+          <h1>CDNER hardware, subscribed</h1>
           <p className="lede">
-            Bond Starlink, 5G, and fiber, protect sessions with BB84, and buy or sell
-            those services through registered CDNER-X vendors.
+            Edge S, Air ax³, Core 812, Data Server, and Lamp 5G — managed subscriptions with location
+            currency (USD equivalent), term discounts, and clever upgrades.
           </p>
           <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
             <Link className="btn" href="/sign-in">Log in</Link>
@@ -24,7 +24,7 @@ export default function HomePage() {
         <div className="grid-3">
           <article className="card">
             <h3>Customers</h3>
-            <p className="lede">Price bonded access, QKD, and path optimization, then track provisioning.</p>
+            <p className="lede">Subscribe to CDNER machines, estimate in local currency, track upgrades.</p>
             <Link href="/user">Open CDNER-X/user</Link>
           </article>
           <article className="card">

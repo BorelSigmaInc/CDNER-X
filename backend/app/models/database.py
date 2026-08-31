@@ -36,6 +36,10 @@ class CatalogOffer(Base):
     monthly_usd = Column(Float, nullable=False)
     setup_usd = Column(Float, default=0)
     description = Column(String)
+    retail_usd = Column(Float, default=0)
+    upgrade_sku = Column(String)
+    family = Column(String)
+    specs = Column(String)
 
 
 class Estimate(Base):

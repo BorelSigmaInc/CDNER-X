@@ -11,10 +11,11 @@ export default function PartnersPage() {
   const [dash, setDash] = useState<Record<string, unknown> | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [skus, setSkus] = useState<string[]>(['CDNER-EDGE-S'])
   const [form, setForm] = useState({
-    service_name: 'customer-bonded-01',
+    service_name: 'customer-edge-01',
     user_email: '',
-    sku: 'CDX-BOND-STD',
+    sku: 'CDNER-EDGE-S',
     region: 'eu-central',
     plan: 'standard',
   })
@@ -30,6 +31,12 @@ export default function PartnersPage() {
 
   useEffect(() => {
     setUser(readSession())
+    api.catalog()
+      .then((data) => {
+        const next = data.items.map((item) => item.sku)
+        if (next.length) setSkus(next)
+      })
+      .catch(() => undefined)
   }, [])
 
   useEffect(() => {
@@ -58,10 +65,10 @@ export default function PartnersPage() {
       <TopNav />
       <div className="page">
         <p className="eyebrow">CDNER-X / partners</p>
-        <h1>Create bonded service</h1>
+        <h1>Provision CDNER machines</h1>
         <p className="lede">
-          Vendor workspace to provision customer connectivity, track monthly sales, and run on-call.
-          Patterned after a cloud “create database” flow — CDNER-X branded, not an IBM product page.
+          Vendor workspace to subscribe customers to Edge S, Air, Core, Lamp 5G, and Data Server hardware,
+          then track sales and on-call.
         </p>
         {error && <div className="banner error">{error}</div>}
         {notice && <div className="banner ok">{notice}</div>}
@@ -83,12 +90,11 @@ export default function PartnersPage() {
             <p className="lede">{partner.company || 'Select a partner account'} · {partner.region}</p>
             <div className="field"><label>Service name</label><input value={form.service_name} onChange={(e) => setForm({ ...form, service_name: e.target.value })} required /></div>
             <div className="field"><label>Customer CDNER-X ID</label><input type="email" value={form.user_email} onChange={(e) => setForm({ ...form, user_email: e.target.value })} required placeholder="user@example.com" /></div>
-            <div className="field"><label>SKU</label>
+            <div className="field"><label>Machine SKU</label>
               <select value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })}>
-                <option>CDX-BOND-STD</option>
-                <option>CDX-BOND-ENT</option>
-                <option>CDX-QKD-BB84</option>
-                <option>CDX-QPATH-OPT</option>
+                {skus.map((sku) => (
+                  <option key={sku} value={sku}>{sku}</option>
+                ))}
               </select>
             </div>
             <div className="field"><label>Region</label>
@@ -98,9 +104,10 @@ export default function PartnersPage() {
             </div>
             <div className="field"><label>Plan</label>
               <select value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value })}>
-                <option value="standard">Standard bonded access</option>
-                <option value="plus">Plus with QKD</option>
-                <option value="enterprise">Enterprise multi-site</option>
+                <option value="starter">Starter hardware</option>
+                <option value="standard">Standard + bonding</option>
+                <option value="plus">Plus + 5G overlay</option>
+                <option value="enterprise">Enterprise fabric</option>
               </select>
             </div>
             <button className="btn" type="submit" disabled={!partnerId}>Create</button>

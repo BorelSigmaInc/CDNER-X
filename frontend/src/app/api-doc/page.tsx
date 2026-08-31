@@ -63,13 +63,15 @@ POST /api/bonding/start?user_id=
 { "num_bits": 16, "user_id": 1 }`}</pre>
           <p>Customer UI shows <code>key_masked</code> only. Partner/lab consoles may show the sifted key.</p>
 
-          <h2 id="estimate-a-service">Estimate a service</h2>
-<pre>{`GET  /api/marketplace/catalog
-GET  /api/marketplace/meta
+          <h2 id="estimate-a-service">Estimate a CDNER machine</h2>
+<pre>{`GET  /api/marketplace/catalog?tz=
+GET  /api/marketplace/fx?tz=
 POST /api/marketplace/estimate
 POST /api/marketplace/orders
-GET  /api/marketplace/orders?user_id=
+POST /api/marketplace/upgrade
 `}</pre>
+          <p>SKUs follow the public CDNER line: Air be lite, Edge S, Air ax³, Air Media, Core 804/812, Lamp 5G R16, Data Server. Amounts are stored in USD and converted from Cloudflare country, Accept-Language, or timezone.</p>
+          <p>Discounts: 12 mo 5%, 24 mo 12%, 36 mo 20%; 3+ units 8%; upgrade credit 30% of residual monthly.</p>
 
           <h2 id="provision-as-a-partner">Provision as a partner</h2>
 <pre>{`GET  /api/marketplace/partners/dashboard?partner_id=
