@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+
 interface BondingStatus {
   status: string
   throughput: string
@@ -51,7 +53,7 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/bonding/status')
+    fetch(`${API_BASE}/api/bonding/status`)
       .then((res) => res.json())
       .then((data) => setBonding(data))
       .catch((err) => setError(err.message))
@@ -59,7 +61,7 @@ function App() {
 
   const handleAuth = () => {
     const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register'
-    fetch(`http://127.0.0.1:8000${endpoint}`, {
+    fetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -79,7 +81,7 @@ function App() {
 
   const runQuantumOptimization = () => {
     setLoadingQuantum(true)
-    fetch('http://127.0.0.1:8000/api/quantum/optimize', {
+    fetch(`${API_BASE}/api/quantum/optimize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paths: ['Starlink', '5G', 'Fiber'], user_id: userId ?? 1 })
@@ -92,7 +94,7 @@ function App() {
 
   const generateQKD = () => {
     setLoadingQkd(true)
-    fetch('http://127.0.0.1:8000/api/qkd/generate', {
+    fetch(`${API_BASE}/api/qkd/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ num_bits: 10, user_id: userId ?? 1 })
@@ -104,7 +106,10 @@ function App() {
   }
 
   const fetchQuantumHistory = () => {
-    fetch('http://127.0.0.1:8000/api/quantum/results?limit=5')
+    const url = userId
+      ? `${API_BASE}/api/quantum/results?limit=5&user_id=${userId}`
+      : `${API_BASE}/api/quantum/results?limit=5`
+    fetch(url)
       .then((res) => res.json())
       .then((data) => setQuantumHistory(data))
       .catch((err) => setError(err.message))
@@ -115,7 +120,7 @@ function App() {
       setError('Please log in first')
       return
     }
-    fetch(`http://127.0.0.1:8000/api/bonding/start?user_id=${userId}`, {
+    fetch(`${API_BASE}/api/bonding/start?user_id=${userId}`, {
       method: 'POST'
     })
       .then((res) => res.json())
